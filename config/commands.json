@@ -136,5 +136,5 @@
     }
   },
   "base_trabajo": "~/proyectos318",
-  "modelo_charla": "qwen2.5:0.5b"
+  "modelo_charla": "qwen2.5:1.5b"
 }
