@@ -1,171 +1,265 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# Copyright 2026 Pablo Daniel De Luca - Ink318 Software - dress318@gmail.com
-# ejecutor.py - Autono318-Mobile
-# Ejecuta la accion JSON que produce router.py sobre el filesystem
+# ejecutor.py v2.0 - Autono318-Mobile con ADB
+# © 2026 Pablo Daniel De Luca - Ink318 Software
+import sys, os, json, shutil, subprocess
 
-import sys
-import os
-import json
-import shutil
-import subprocess
+HOME = os.path.expanduser("~")
+PROYECTO_DIR = os.path.join(HOME, "proyectos318")
+CONFIG_PATH = os.path.join(PROYECTO_DIR, "config", "commands.json")
+SEGURIDAD_PATH = os.path.join(PROYECTO_DIR, "config", "seguridad.json")
 
-CONFIG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "commands.json")
-DESTRUCTIVAS = {"borrar_carpeta", "borrar_archivo"}
+EXIT_REQUIERE_CONFIRMACION = 2
+EXIT_ERROR = 1
+EXIT_OK = 0
 
+APPS = {
+    "whatsapp": "com.whatsapp.w4b",
+    "whatsapp_business": "com.whatsapp.w4b",
+    "chrome": "com.android.chrome",
+    "navegador": "com.android.chrome",
+    "youtube": "com.google.android.youtube",
+    "yt_music": "com.google.android.apps.youtube.music",
+    "telegram": "org.telegram.messenger",
+    "maps": "com.google.android.apps.maps",
+    "mapas": "com.google.android.apps.maps",
+    "ajustes": "com.android.settings",
+    "settings": "com.android.settings",
+    "camara": "com.sec.android.app.camera",
+    "camera": "com.sec.android.app.camera",
+    "calculadora": "com.sec.android.app.popupcalculator",
+    "galeria": "com.sec.android.gallery3d",
+    "gallery": "com.sec.android.gallery3d",
+}
 
 def cargar_config():
     with open(CONFIG_PATH, "r", encoding="utf-8") as f:
         return json.load(f)
 
+def cargar_seguridad():
+    try:
+        with open(SEGURIDAD_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {"zonas_rojas": {"archivos": [], "comandos": []}}
 
 def base_trabajo(config):
-    ruta = os.path.expanduser(config.get("base_trabajo", "~/proyectos318"))
+    ruta = os.path.expanduser(config.get("base_trabajo", "~/proyectos318/workspace"))
     os.makedirs(ruta, exist_ok=True)
     return ruta
 
-
 def resolver_ruta(base, ruta_relativa):
-    ruta_absoluta = os.path.normpath(os.path.join(base, ruta_relativa))
-    if not ruta_absoluta.startswith(os.path.normpath(base)):
-        raise PermissionError(f"Ruta fuera de la carpeta de trabajo: {ruta_relativa}")
-    return ruta_absoluta
+    base_real = os.path.realpath(base)
+    ruta_real = os.path.realpath(os.path.join(base_real, ruta_relativa))
+    if ruta_real == base_real:
+        return ruta_real
+    if not ruta_real.startswith(base_real + os.sep):
+        raise PermissionError("Ruta fuera del workspace: " + ruta_relativa)
+    return ruta_real
 
+def validar_zona_roja(accion_json, seguridad):
+    ruta = accion_json.get("ruta") or ""
+    for zona in seguridad.get("zonas_rojas", {}).get("archivos", []):
+        if ruta.startswith(zona):
+            raise PermissionError("Zona roja protegida: " + zona)
 
-def confirmar(mensaje):
-    print(f"WARNING  {mensaje} (escribi SI para confirmar): ", end="", flush=True)
+def emitir_confirmacion(accion_json):
+    print(json.dumps({
+        "estado": "requiere_confirmacion",
+        "token": accion_json.get("token"),
+        "pregunta": "Confirmas " + str(accion_json.get("accion")) + " sobre " + str(accion_json.get("ruta") or "workspace") + "?",
+        "accion_original": accion_json
+    }, ensure_ascii=False))
+    sys.exit(EXIT_REQUIERE_CONFIRMACION)
+
+def ejecutar_shell(comando, timeout=30):
     try:
-        with open("/dev/tty", "r") as tty:
-            respuesta = tty.readline().strip().lower()
-    except OSError:
-        return False
-    return respuesta in ("si", "si")
+        r = subprocess.run(comando, shell=True, capture_output=True, text=True, timeout=timeout)
+        return (r.stdout or "") + (r.stderr or "")
+    except Exception as e:
+        return "Error: " + str(e)
 
+def adb(comando):
+    return ejecutar_shell("adb shell " + comando, timeout=15)
 
-def ejecutar(accion_json, config):
+def ejecutar(accion_json, config, seguridad):
     accion = accion_json.get("accion")
     ruta_rel = accion_json.get("ruta") or ""
     base = base_trabajo(config)
+    meta = config.get("acciones", {}).get(accion)
 
-    if accion not in config["acciones"]:
-        print(f"Accion desconocida: {accion}")
-        return
+    if not meta:
+        print(json.dumps({"estado": "error", "detalle": "Accion desconocida: " + str(accion)}))
+        sys.exit(EXIT_ERROR)
 
-    if accion in DESTRUCTIVAS:
-        if not confirmar(f"Vas a ejecutar '{accion}' sobre '{ruta_rel}'. Esto no se puede deshacer."):
-            print("Cancelado.")
-            return
+    validar_zona_roja(accion_json, seguridad)
 
-    ruta = resolver_ruta(base, ruta_rel) if ruta_rel else base
+    if meta.get("destructiva") and not accion_json.get("confirmado"):
+        emitir_confirmacion(accion_json)
 
-    if accion == "crear_carpeta":
-        os.makedirs(ruta, exist_ok=True)
-        print(f"Carpeta creada: {ruta}")
+    # ─── ACCIONES DE FILESYSTEM ───
+    if accion in ("crear_carpeta","borrar_carpeta","crear_archivo","editar_archivo",
+                  "borrar_archivo","listar","leer_archivo","buscar_archivo"):
+        try:
+            ruta = resolver_ruta(base, ruta_rel) if ruta_rel else base
+        except PermissionError as e:
+            print(json.dumps({"estado": "error", "detalle": str(e)}))
+            sys.exit(EXIT_ERROR)
 
-    elif accion == "borrar_carpeta":
-        if os.path.isdir(ruta):
-            shutil.rmtree(ruta)
-            print(f"Carpeta borrada: {ruta}")
-        else:
-            print(f"No existe la carpeta: {ruta}")
-
-    elif accion == "crear_archivo":
-        os.makedirs(os.path.dirname(ruta) or base, exist_ok=True)
-        with open(ruta, "w", encoding="utf-8") as f:
-            f.write(accion_json.get("contenido") or "")
-        print(f"Archivo creado: {ruta}")
-
-    elif accion == "editar_archivo":
-        if not os.path.isfile(ruta):
-            print(f"No existe el archivo: {ruta}")
-            return
-        with open(ruta, "w", encoding="utf-8") as f:
-            f.write(accion_json.get("contenido") or "")
-        print(f"Archivo editado: {ruta}")
-
-    elif accion == "borrar_archivo":
-        if os.path.isfile(ruta):
-            os.remove(ruta)
-            print(f"Archivo borrado: {ruta}")
-        else:
-            print(f"No existe el archivo: {ruta}")
-
-    elif accion == "listar":
-        if os.path.isdir(ruta):
-            items = sorted(os.listdir(ruta))
-            if items:
-                for item in items:
-                    tipo = "[D]" if os.path.isdir(os.path.join(ruta, item)) else "[F]"
-                    print(f"  {tipo} {item}")
-            else:
-                print("  (carpeta vacia)")
-        else:
-            print(f"No existe la carpeta: {ruta}")
-
-    elif accion == "leer_archivo":
-        if os.path.isfile(ruta):
+        if accion == "crear_carpeta":
+            os.makedirs(ruta, exist_ok=True)
+            salida = "Carpeta creada: " + ruta
+        elif accion == "borrar_carpeta":
+            shutil.rmtree(ruta) if os.path.isdir(ruta) else None
+            salida = "Carpeta borrada: " + ruta
+        elif accion == "crear_archivo":
+            os.makedirs(os.path.dirname(ruta) or base, exist_ok=True)
+            with open(ruta, "w", encoding="utf-8") as f:
+                f.write(accion_json.get("contenido") or "")
+            salida = "Archivo creado: " + ruta
+        elif accion == "editar_archivo":
+            with open(ruta, "w", encoding="utf-8") as f:
+                f.write(accion_json.get("contenido") or "")
+            salida = "Archivo editado: " + ruta
+        elif accion == "borrar_archivo":
+            os.remove(ruta) if os.path.isfile(ruta) else None
+            salida = "Archivo borrado: " + ruta
+        elif accion == "listar":
+            items = sorted(os.listdir(ruta)) if os.path.isdir(ruta) else []
+            salida = "\n".join(("  [D] " if os.path.isdir(os.path.join(ruta,i)) else "  [F] ") + i for i in items) or "  (vacia)"
+        elif accion == "leer_archivo":
             with open(ruta, "r", encoding="utf-8", errors="replace") as f:
-                contenido = f.read()
-            print(f"[{ruta}]\n{'-'*40}\n{contenido}\n{'-'*40}")
-        else:
-            print(f"No existe el archivo: {ruta}")
+                salida = f.read()
+        elif accion == "buscar_archivo":
+            nombre = os.path.basename(ruta_rel)
+            enc = []
+            for root, dirs, files in os.walk(base):
+                for f in files:
+                    if nombre.lower() in f.lower():
+                        enc.append(os.path.join(root, f))
+            salida = "Encontrados:\n" + "\n".join(enc) if enc else "No se encontro: " + nombre
 
-    elif accion == "buscar_archivo":
-        nombre = os.path.basename(ruta_rel) if ruta_rel else ""
-        if not nombre:
-            print("Especifica el nombre del archivo a buscar.")
-            return
-        encontrados = []
-        for root, dirs, files in os.walk(base):
-            for f in files:
-                if nombre.lower() in f.lower():
-                    encontrados.append(os.path.join(root, f))
-        if encontrados:
-            print("Encontrados:")
-            for e in encontrados:
-                print(f"  {e}")
+    # ─── ACCIONES ADB (control del teléfono) ───
+    elif accion == "abrir_app":
+        app = (accion_json.get("app") or accion_json.get("package") or "").lower()
+        package = APPS.get(app, app if "." in app else None)
+        if not package:
+            salida = "App desconocida: " + app
         else:
-            print(f"No se encontro '{nombre}' en {base}")
+            adb(f"monkey -p {package} -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1")
+            salida = "App abierta: " + package
+
+    elif accion == "tap":
+        x = accion_json.get("x", 0)
+        y = accion_json.get("y", 0)
+        adb(f"input tap {x} {y}")
+        salida = f"Tap en ({x}, {y})"
+
+    elif accion == "escribir":
+        texto = accion_json.get("texto", "").replace(" ", "%s")
+        adb(f"input text '{texto}'")
+        salida = "Escrito: " + accion_json.get("texto", "")
+
+    elif accion == "tecla":
+        codigo = accion_json.get("codigo", 66)
+        adb(f"input keyevent {codigo}")
+        salida = f"Tecla {codigo}"
+
+    elif accion == "volver":
+        adb("input keyevent 4")
+        salida = "Back"
+
+    elif accion == "home":
+        adb("input keyevent 3")
+        salida = "Home"
+
+    elif accion == "leer_pantalla":
+        adb("uiautomator dump /sdcard/ui.xml >/dev/null 2>&1")
+        xml = ejecutar_shell("adb shell cat /sdcard/ui.xml")
+        import re
+        textos = re.findall(r'text="([^"]+)"', xml)
+        salida = "Textos en pantalla:\n" + "\n".join(t for t in textos if t.strip())
+
+    elif accion == "screenshot":
+        out = os.path.expanduser("~/cyberia_shot.png")
+        ejecutar_shell(f"adb exec-out screencap -p > {out}")
+        salida = "Screenshot guardado: " + out
+
+    elif accion == "secuencia":
+        acciones = accion_json.get("acciones", [])
+        resultados = []
+        for a in acciones:
+            try:
+                sub = json.dumps(a)
+                proc = subprocess.run(["python3", __file__], input=sub, capture_output=True, text=True, timeout=30)
+                resultados.append(proc.stdout.strip())
+                import time
+                time.sleep(a.get("espera", 0.5))
+            except Exception as e:
+                resultados.append(f"Error en paso: {e}")
+        salida = "\n".join(resultados)
 
     elif accion == "info_sistema":
-        resultado = subprocess.run("uname -a", shell=True, capture_output=True, text=True)
-        mem = subprocess.run("free -h", shell=True, capture_output=True, text=True)
-        bat = subprocess.run("termux-battery-status", shell=True, capture_output=True, text=True)
-        print(f"Sistema:\n{resultado.stdout.strip()}")
-        print(f"\nMemoria:\n{mem.stdout.strip()}")
+        kernel = ejecutar_shell("uname -a").strip()
+        mem = ejecutar_shell("free -h").strip()
+        bat = ejecutar_shell("termux-battery-status")
         try:
-            bat_data = json.loads(bat.stdout)
-            print(f"\nBateria: {bat_data.get('percentage', '?')}% - {bat_data.get('status', '?')}")
+            bd = json.loads(bat)
+            bat_txt = f"{bd.get('percentage','?')}% ({bd.get('status','?')})"
         except Exception:
-            pass
+            bat_txt = "?"
+        salida = f"Sistema:\n{kernel}\n\nMemoria:\n{mem}\n\nBateria: {bat_txt}"
 
-    elif accion == "compilar":
-        comando = accion_json.get("comando")
-        if not comando:
-            print("No se especifico comando de compilacion.")
-            return
-        print(f"Ejecutando: {comando}")
-        resultado = subprocess.run(comando, shell=True, cwd=ruta, capture_output=True, text=True)
-        print(resultado.stdout)
-        if resultado.returncode != 0:
-            print(f"Error:\n{resultado.stderr}")
+    elif accion == "vibrar":
+        ms = accion_json.get("ms", 500)
+        ejecutar_shell(f"termux-vibrate -d {ms}")
+        salida = f"Vibrado {ms}ms"
 
+    elif accion == "notificar":
+        titulo = accion_json.get("titulo", "CyberIA")
+        texto = accion_json.get("texto", "")
+        ejecutar_shell(f'termux-notification -t "{titulo}" -c "{texto}"')
+        salida = "Notificacion enviada"
+
+    elif accion == "hablar":
+        texto = accion_json.get("texto", "")
+        ejecutar_shell(f'termux-tts-speak -l es "{texto}"')
+        salida = f"Dicho: {texto}"
+
+    elif accion == "linterna":
+        estado = accion_json.get("estado", "on")
+        ejecutar_shell(f"termux-torch {estado}")
+        salida = f"Linterna {estado}"
+
+    elif accion == "whatsapp":
+        numero = accion_json.get("numero", "")
+        texto = accion_json.get("texto", "").replace(" ", "%20")
+        if not numero:
+            salida = "Falta numero"
+        else:
+            ejecutar_shell(f'am start -a android.intent.action.VIEW -d "https://wa.me/{numero}?text={texto}"')
+            salida = f"WhatsApp abierto para {numero}"
+
+    else:
+        salida = "Accion '" + str(accion) + "' no implementada."
+
+    print(json.dumps({"estado": "ok", "salida": salida}, ensure_ascii=False))
+    sys.exit(EXIT_OK)
 
 def main():
     entrada = sys.stdin.read().strip()
     if not entrada:
-        print("No se recibio ninguna accion.")
-        sys.exit(1)
+        print(json.dumps({"estado": "error", "detalle": "Sin accion"}))
+        sys.exit(EXIT_ERROR)
     try:
         accion_json = json.loads(entrada)
     except json.JSONDecodeError:
-        print(f"JSON invalido: {entrada}")
-        sys.exit(1)
+        print(json.dumps({"estado": "error", "detalle": "JSON invalido"}))
+        sys.exit(EXIT_ERROR)
     if "error" in accion_json:
-        print(f"El router reporto un error: {accion_json['error']}")
-        sys.exit(1)
-    config = cargar_config()
-    ejecutar(accion_json, config)
-
+        print(json.dumps({"estado": "error", "detalle": accion_json["error"]}))
+        sys.exit(EXIT_ERROR)
+    ejecutar(accion_json, cargar_config(), cargar_seguridad())
 
 if __name__ == "__main__":
     main()

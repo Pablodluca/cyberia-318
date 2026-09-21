@@ -1,4 +1,11 @@
-*.gguf
+# (pegar el contenido corto, guardar)
+
+# 3
+git add -A
+git commit -m "CyberIA 318 · Inicio"
+
+# 4
+gh repo create cyberia-318 --public --source=. --remote=origin --push*.gguf
 *.bin
 *.onnx
 *.pt

@@ -40,6 +40,99 @@
     "compilar": {
       "descripcion": "Ejecuta un comando de build en una carpeta",
       "requiere_confirmacion": false
+    },
+    "abrir_app": {
+      "destructiva": false,
+      "params": [
+        "app"
+      ],
+      "descripcion": "Abre una app (whatsapp, chrome, youtube, telegram, maps, ajustes, camara)"
+    },
+    "tap": {
+      "destructiva": false,
+      "params": [
+        "x",
+        "y"
+      ],
+      "descripcion": "Toca la pantalla en coordenadas (x, y)"
+    },
+    "escribir": {
+      "destructiva": false,
+      "params": [
+        "texto"
+      ],
+      "descripcion": "Escribe texto en el campo activo"
+    },
+    "tecla": {
+      "destructiva": false,
+      "params": [
+        "codigo"
+      ],
+      "descripcion": "Presiona tecla por codigo (66=Enter, 4=Back, 3=Home)"
+    },
+    "volver": {
+      "destructiva": false,
+      "params": [],
+      "descripcion": "Presiona el boton atras"
+    },
+    "home": {
+      "destructiva": false,
+      "params": [],
+      "descripcion": "Va a la pantalla de inicio"
+    },
+    "leer_pantalla": {
+      "destructiva": false,
+      "params": [],
+      "descripcion": "Lee los textos visibles en la pantalla actual (uiautomator)"
+    },
+    "screenshot": {
+      "destructiva": false,
+      "params": [],
+      "descripcion": "Toma captura de pantalla y la guarda en ~/cyberia_shot.png"
+    },
+    "secuencia": {
+      "destructiva": false,
+      "params": [
+        "acciones"
+      ],
+      "descripcion": "Ejecuta una lista de acciones en orden"
+    },
+    "vibrar": {
+      "destructiva": false,
+      "params": [
+        "ms"
+      ],
+      "descripcion": "Vibra X milisegundos"
+    },
+    "notificar": {
+      "destructiva": false,
+      "params": [
+        "titulo",
+        "texto"
+      ],
+      "descripcion": "Muestra notificacion"
+    },
+    "hablar": {
+      "destructiva": false,
+      "params": [
+        "texto"
+      ],
+      "descripcion": "Dice texto por TTS"
+    },
+    "linterna": {
+      "destructiva": false,
+      "params": [
+        "estado"
+      ],
+      "descripcion": "Prende o apaga la linterna (on/off)"
+    },
+    "whatsapp": {
+      "destructiva": false,
+      "params": [
+        "numero",
+        "texto"
+      ],
+      "descripcion": "Abre WhatsApp con texto preparado para un numero"
     }
   },
   "base_trabajo": "~/proyectos318",
