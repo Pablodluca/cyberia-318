@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0A0E17">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="theme.css">
+<title>CyberIA 318</title>
+</head>
+<body>
+<div class="app">
+
+  <header class="header">
+    <div class="brand">
+      <span class="logo">⚡</span>
+      <div>
+        <div class="title">CYBERIA 318</div>
+        <div class="subtitle" id="statusText">verificando...</div>
+      </div>
+    </div>
+    <button class="icon-btn" id="settingsBtn" aria-label="Ajustes">⚙</button>
+  </header>
+
+  <div class="core-wrapper">
+    <div class="core-sphere" id="coreSphere"></div>
+  </div>
+
+  <main class="messages" id="messages">
+    <div class="msg system">
+      <span>CyberIA 318 lista. Escribí o hablá.</span>
+    </div>
+  </main>
+
+  <div class="quick-cmds">
+    <button onclick="quick('¿Quién sos?')">¿Quién sos?</button>
+    <button onclick="quick('Mostrame la info del sistema')">Sistema</button>
+    <button onclick="quick('Lista la carpeta workspace')">Workspace</button>
+  </div>
+
+  <footer class="input-bar">
+    <textarea id="prompt" placeholder="Escribí un comando..." rows="1"></textarea>
+    <button class="send-btn" id="sendBtn" aria-label="Enviar">
+      <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+    </button>
+  </footer>
+
+</div>
+
+<!-- Modal ajustes -->
+<div class="modal" id="settingsModal">
+  <div class="modal-content">
+    <h3>⚙ Ajustes</h3>
+    <label>Modelo
+      <select id="modelSelect"></select>
+    </label>
+    <div class="info" id="systemInfo"></div>
+    <button class="close-btn" onclick="closeSettings()">Cerrar</button>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

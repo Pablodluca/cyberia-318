@@ -1,0 +1,11 @@
+{
+    "zonas_rojas": {
+        "archivos": ["/system", "/data/app", "/etc", "/boot", "/proc"],
+        "comandos": ["rm -rf /", "mkfs", "dd if=", "shutdown -h now", "reboot"],
+        "apps_criticas": ["com.android.settings", "com.google.android.packageinstaller"]
+    },
+    "protocolos_seguridad": {
+        "confirmacion_requerida": ["borrar_archivo", "borrar_carpeta", "enviar_mensaje_critico", "hacer_llamada"],
+        "modo_supervivencia": true
+    }
+}

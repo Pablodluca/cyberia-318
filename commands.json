@@ -1,0 +1,16 @@
+{
+  "_comment": "Copyright 2026 Pablo Daniel De Luca - Ink318 Software - dress318@gmail.com",
+  "acciones": {
+    "crear_carpeta":  { "descripcion": "Crea una carpeta nueva",                         "requiere_confirmacion": false },
+    "borrar_carpeta": { "descripcion": "Borra una carpeta y todo su contenido",          "requiere_confirmacion": true  },
+    "crear_archivo":  { "descripcion": "Crea un archivo con contenido",                  "requiere_confirmacion": false },
+    "editar_archivo": { "descripcion": "Reemplaza el contenido de un archivo",           "requiere_confirmacion": false },
+    "borrar_archivo": { "descripcion": "Borra un archivo",                               "requiere_confirmacion": true  },
+    "listar":         { "descripcion": "Lista el contenido de una carpeta",              "requiere_confirmacion": false },
+    "leer_archivo":   { "descripcion": "Muestra el contenido de un archivo",             "requiere_confirmacion": false },
+    "buscar_archivo": { "descripcion": "Busca archivos por nombre en la base de trabajo","requiere_confirmacion": false },
+    "info_sistema":   { "descripcion": "Muestra info del sistema, RAM y bateria",        "requiere_confirmacion": false },
+    "compilar":       { "descripcion": "Ejecuta un comando de build en una carpeta",     "requiere_confirmacion": false }
+  },
+  "base_trabajo": "~/proyectos318"
+}

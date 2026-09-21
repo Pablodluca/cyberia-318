@@ -1,0 +1,172 @@
+/* © 2026 Pablo Daniel De Luca - Ink318 Software */
+:root{
+  --bg:#0A0E17; --surface:#121826; --card:#1A2332;
+  --cyan:#00E5FF; --cyan-glow:rgba(0,229,255,.4);
+  --magenta:#FF0055; --magenta-glow:rgba(255,0,85,.4);
+  --purple:#7000FF;
+  --text:#E0F7FA; --text-dim:#80DEEA;
+  --green:#00E676; --red:#FF1744;
+  --font:'JetBrains Mono','Fira Code',ui-monospace,monospace;
+  --safe-top:env(safe-area-inset-top,0px);
+  --safe-bot:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{
+  font-family:var(--font);
+  background:var(--bg);
+  color:var(--text);
+  background-image:
+    radial-gradient(circle at 50% 20%, rgba(0,229,255,.08) 0%, transparent 50%),
+    radial-gradient(circle at 20% 80%, rgba(255,0,85,.05) 0%, transparent 50%);
+}
+.app{
+  display:flex;flex-direction:column;
+  height:100vh;height:100dvh;
+  padding-top:var(--safe-top);padding-bottom:var(--safe-bot);
+}
+
+/* Header */
+.header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px;
+  background:linear-gradient(180deg,var(--card) 0%,transparent 100%);
+  border-bottom:1px solid rgba(0,229,255,.15);
+}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{font-size:24px;filter:drop-shadow(0 0 8px var(--cyan-glow))}
+.title{font-size:15px;font-weight:700;color:var(--cyan);letter-spacing:2px;text-shadow:0 0 10px var(--cyan-glow)}
+.subtitle{font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;margin-top:2px}
+.icon-btn{
+  background:transparent;border:1px solid rgba(0,229,255,.3);
+  color:var(--cyan);width:36px;height:36px;border-radius:50%;
+  font-size:16px;cursor:pointer;transition:all .2s;
+}
+.icon-btn:active{background:rgba(0,229,255,.1)}
+
+/* CyberCore */
+.core-wrapper{display:flex;justify-content:center;padding:16px 0 8px;flex-shrink:0}
+.core-sphere{
+  width:80px;height:80px;border-radius:50%;
+  background:radial-gradient(circle, rgba(255,255,255,.9) 0%, var(--purple) 40%, #000010 100%);
+  border:2px solid rgba(0,229,255,.5);
+  box-shadow:0 0 25px var(--cyan-glow), inset 0 0 12px var(--cyan-glow);
+  animation:breathe 2s ease-in-out infinite alternate;
+  transition:all .3s;
+}
+.core-sphere.online{
+  border-color:var(--cyan);
+  box-shadow:0 0 35px var(--cyan-glow), inset 0 0 15px var(--cyan);
+}
+.core-sphere.thinking{
+  border-color:var(--magenta);
+  background:radial-gradient(circle, rgba(255,255,255,.9) 0%, var(--magenta) 40%, #100010 100%);
+  box-shadow:0 0 40px var(--magenta-glow);
+  animation:breathe .6s ease-in-out infinite alternate;
+}
+@keyframes breathe{0%{transform:scale(.95)}100%{transform:scale(1.05)}}
+
+/* Mensajes */
+.messages{
+  flex:1;overflow-y:auto;padding:12px 16px;
+  display:flex;flex-direction:column;gap:10px;
+  scroll-behavior:smooth;
+}
+.messages::-webkit-scrollbar{width:4px}
+.messages::-webkit-scrollbar-thumb{background:var(--cyan);border-radius:2px}
+.msg{
+  max-width:88%;padding:10px 14px;border-radius:14px;
+  font-size:13px;line-height:1.5;word-wrap:break-word;
+  animation:fadeUp .25s ease;
+  white-space:pre-wrap;
+}
+.msg.user{
+  align-self:flex-end;
+  background:linear-gradient(135deg, rgba(0,229,255,.15), rgba(112,0,255,.15));
+  border:1px solid rgba(0,229,255,.3);
+  border-bottom-right-radius:4px;
+  color:var(--text);
+}
+.msg.ai{
+  align-self:flex-start;
+  background:rgba(26,35,50,.8);
+  border:1px solid rgba(255,0,85,.25);
+  border-bottom-left-radius:4px;
+  color:var(--text);
+}
+.msg.system{
+  align-self:center;text-align:center;
+  font-size:11px;color:var(--text-dim);
+  background:transparent;border:none;
+  opacity:.7;
+}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* Quick cmds */
+.quick-cmds{
+  display:flex;gap:8px;padding:8px 16px;overflow-x:auto;
+  scrollbar-width:none;flex-shrink:0;
+}
+.quick-cmds::-webkit-scrollbar{display:none}
+.quick-cmds button{
+  flex-shrink:0;
+  background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.25);
+  color:var(--text-dim);font-family:var(--font);font-size:11px;
+  padding:6px 12px;border-radius:20px;cursor:pointer;
+  transition:all .2s;white-space:nowrap;
+}
+.quick-cmds button:active{background:rgba(0,229,255,.2);color:var(--text)}
+
+/* Input bar */
+.input-bar{
+  display:flex;gap:8px;padding:12px 16px;align-items:flex-end;
+  background:linear-gradient(0deg,var(--card) 0%,transparent 100%);
+  border-top:1px solid rgba(0,229,255,.15);
+  flex-shrink:0;
+}
+#prompt{
+  flex:1;background:var(--surface);border:1px solid rgba(0,229,255,.3);
+  color:var(--text);font-family:var(--font);font-size:13px;
+  padding:10px 14px;border-radius:20px;resize:none;
+  max-height:120px;outline:none;transition:all .2s;line-height:1.4;
+}
+#prompt:focus{border-color:var(--cyan);box-shadow:0 0 10px var(--cyan-glow)}
+.send-btn{
+  width:42px;height:42px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--cyan),var(--purple));
+  border:none;color:var(--bg);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 0 15px var(--cyan-glow);transition:all .2s;
+}
+.send-btn:active{transform:scale(.92)}
+.send-btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* Modal */
+.modal{
+  position:fixed;inset:0;background:rgba(0,0,0,.75);
+  display:none;align-items:center;justify-content:center;
+  padding:20px;z-index:100;backdrop-filter:blur(4px);
+}
+.modal.open{display:flex}
+.modal-content{
+  background:var(--card);border:1px solid rgba(0,229,255,.3);
+  border-radius:20px;padding:20px;width:100%;max-width:340px;
+  box-shadow:0 0 40px rgba(0,229,255,.2);
+}
+.modal-content h3{color:var(--cyan);font-size:16px;margin-bottom:16px;letter-spacing:1px}
+.modal-content label{display:block;font-size:11px;color:var(--text-dim);margin-bottom:12px}
+#modelSelect{
+  width:100%;margin-top:6px;padding:8px;
+  background:var(--surface);border:1px solid rgba(0,229,255,.3);
+  color:var(--text);font-family:var(--font);font-size:12px;
+  border-radius:8px;outline:none;
+}
+.info{font-size:11px;color:var(--text-dim);line-height:1.7;margin:12px 0;padding:10px;background:rgba(0,0,0,.3);border-radius:8px}
+.info b{color:var(--cyan)}
+.close-btn{
+  width:100%;margin-top:8px;padding:10px;
+  background:rgba(0,229,255,.15);border:1px solid rgba(0,229,255,.3);
+  color:var(--text);font-family:var(--font);font-size:12px;
+  border-radius:10px;cursor:pointer;transition:all .2s;
+}
+.close-btn:active{background:rgba(0,229,255,.25)}
